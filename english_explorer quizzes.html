@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Explorer - Master Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --kahoot-purple: #46178f;
+    --kahoot-light-bg: #f2f2f2;
+    --kahoot-red: #e21b3c;
+    --kahoot-blue: #1368ce;
+    --kahoot-yellow: #d89e00;
+    --kahoot-green: #26890c;
+  }
+  body { font-family: 'Montserrat', sans-serif; text-align: center; margin: 0; padding: 0; transition: background-color 0.3s; min-height: 100vh; display: flex; flex-direction: column; }
+  body.mode-lobby { background-color: var(--kahoot-purple); color: white; }
+  body.mode-game { background-color: var(--kahoot-light-bg); color: #333; }
+  
+  #header-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; }
+  #timer-display { font-size: 24px; font-weight: 800; color: var(--kahoot-purple); background: #f2f2f2; padding: 10px 20px; border-radius: 50px; }
+  #score-display { font-size: 20px; font-weight: 800; }
+  
+  #app-layout { display: flex; flex-direction: column; width: 95%; max-width: 1200px; margin: 40px auto; gap: 20px; flex-grow: 1; align-items: flex-start; }
+  @media (min-width: 900px) { #app-layout { flex-direction: row; align-items: stretch; } }
+  
+  #quiz-container { padding: 20px; flex-grow: 1; width: 100%; box-sizing: border-box; }
+  
+  #sidebar { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 0 rgba(0,0,0,0.1); width: 100%; max-width: 350px; display: none; flex-direction: column; align-items: center; text-align: center; box-sizing: border-box; }
+  #picked-name { font-size: 30px; font-weight: 800; margin: 25px 0; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; word-break: break-word; color: var(--kahoot-purple); background: #f9f9f9; width: 100%; border-radius: 8px; border: 2px dashed #ccc; padding: 10px; box-sizing: border-box; transition: color 0.2s;}
+  
+  h2 { font-size: 40px; font-weight: 800; margin-bottom: 5px; text-shadow: 2px 2px 0 rgba(0,0,0,0.1); }
+  .subtitle { font-size: 16px; font-weight: 500; margin-bottom: 30px; opacity: 0.9; }
+  
+  #progress { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  
+  .btn-audio { background: #6c5ce7; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; cursor: pointer; margin-bottom: 20px; box-shadow: 0 3px 0 rgba(0,0,0,0.2); transition: transform 0.1s; }
+  .btn-audio:active { transform: translateY(3px); box-shadow: none; }
+
+  #question { font-size: 24px; font-weight: 800; background-color: white; color: #333; padding: 30px 40px; border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,0.1); margin-bottom: 30px; min-height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  
+  .passage { background: #f9f9f9; padding: 20px; border-left: 6px solid var(--kahoot-blue); font-size: 16px; font-weight: 600; margin-top: 20px; text-align: left; width: 100%; box-sizing: border-box; border-radius: 0 8px 8px 0; }
+  
+  #options { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; }
+  @media (min-width: 600px) { #options { grid-template-columns: 1fr 1fr; } }
+  
+  .btn-answer { font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 700; color: white; border: none; padding: 20px; min-height: 100px; border-radius: 4px; cursor: pointer; box-shadow: 0 6px 0 rgba(0,0,0,0.2); transition: transform 0.1s; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .btn-answer:active { transform: translateY(6px); box-shadow: none; }
+  
+  .color-0 { background-color: var(--kahoot-red); } 
+  .color-1 { background-color: var(--kahoot-blue); } 
+  .color-2 { background-color: var(--kahoot-yellow); } 
+  .color-3 { background-color: var(--kahoot-green); }
+  
+  .menu-grid { display: grid; grid-template-columns: 1fr; gap: 20px; text-align: center; margin-top: 20px; }
+  @media (min-width: 768px) { .menu-grid { grid-template-columns: 1fr 1fr; } }
+  
+  .menu-box { background: rgba(0,0,0,0.15); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+  .menu-box h4 { margin-top: 0; margin-bottom: 20px; font-size: 20px; color: white; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;}
+  
+  .btn-grammar { font-family: 'Montserrat', sans-serif; background-color: white; color: #333; font-size: 14px; font-weight: 700; border: none; padding: 12px 10px; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); margin: 5px; width: 80%; max-width: 300px; transition: transform 0.1s; }
+  .btn-grammar:active { transform: translateY(4px); box-shadow: none; } 
+  .btn-grammar:hover { background-color: #f0f0f0; }
+
+  .setup-box { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px; display: inline-block; width: 100%; box-sizing: border-box; max-width: 700px;}
+  .setup-box input { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 700; width: 60px; padding: 8px; border: none; border-radius: 4px; text-align: center; margin-left: 10px; color: var(--kahoot-purple); display: inline-block;}
+  .setup-box textarea { font-family: 'Montserrat', sans-serif; font-size: 16px; width: 100%; padding: 12px; border: none; border-radius: 4px; resize: vertical; margin-top: 10px; box-sizing: border-box; }
+  
+  #leaderboard-section, #rules-section { display: none; background: white; padding: 30px; border-radius: 8px; color: #333; width: 100%; box-sizing: border-box; box-shadow: 0 4px 0 rgba(0,0,0,0.1); text-align: left; }
+  .table-ranking { width: 100%; border-collapse: collapse; margin-top: 15px; font-family: 'Montserrat', sans-serif; }
+  .table-ranking th, .table-ranking td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+  .table-ranking th { background-color: var(--kahoot-purple); color: white; position: sticky; top: 0; }
+  .table-ranking tr:nth-child(even) { background-color: #f9f9f9; }
+  .rank-1 { font-weight: 800; color: #d89e00; font-size: 1.1em; }
+  .rank-2 { font-weight: 700; color: #7f8c8d; }
+  .rank-3 { font-weight: 700; color: #d35400; }
+
+  .footer { padding: 20px; font-size: 14px; font-weight: 700; opacity: 0.8; margin-top: auto;}
+</style>
+</head>
+<body class="mode-lobby" id="app-body">
+  
+  <div id="header-bar">
+    <div id="timer-display">10:00</div>
+    <div id="score-display">Score: <span id="score">0</span></div>
+  </div>
+
+  <div id="app-layout">
+    <div id="quiz-container">
+      
+      <!-- MAIN MENU (LOBBY) -->
+      <div id="main-menu">
+        <h2 id="main-title">English Explorer!</h2>
+        <div class="subtitle">Enter names to spin, set timer, and assign packets.</div>
+
+        <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+          <button class="btn-grammar" style="background:var(--kahoot-yellow); color:white; width:auto; padding:10px 20px; font-size:16px; margin:0;" onclick="showLeaderboard()">🏆 View Leaderboard</button>
+          <button class="btn-grammar" style="background:var(--kahoot-blue); color:white; width:auto; padding:10px 20px; font-size:16px; margin:0;" onclick="showRules()">📖 How to Play</button>
+        </div>
+
+        <div style="text-align: center;">
+          <div class="setup-box">
+            <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 20px;">
+              <div>
+                <label for="timeLimit"><strong>TIMER (Minutes):</strong></label>
+                <input type="number" id="timeLimit" value="10" min="1" max="120">
+              </div>
+              <div>
+                <label for="qPerPacket"><strong>QUESTIONS / PACKET:</strong></label>
+                <input type="number" id="qPerPacket" value="10" min="1" max="100" onchange="generatePackets()">
+              </div>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.3); margin: 20px 0;">
+            
+            <label for="studentList" style="font-weight: 700;">Student Roster (Auto-packet assignment):</label>
+            <p style="font-size: 12px; margin: 5px 0 0 0;">Separate names with commas or line breaks.</p>
+            <textarea id="studentList" placeholder="e.g. Andi, Budi, Citra, Denis..." rows="3" oninput="updateStudentList()"></textarea>
+          </div>
+
+          <!-- ADMIN AREA -->
+          <div class="setup-box" id="admin-upload-box" style="display: none; margin-top: 0px; margin-bottom: 20px;">
+            <label for="uploadSoal" style="font-weight: 700;">Admin Area: Upload Question Bank (.json):</label>
+            <p style="font-size: 12px; margin: 5px 0 10px 0;">Override default questions with your custom JSON file.</p>
+            <input type="file" id="uploadSoal" accept=".json" onchange="unggahSoal(event)" style="font-size: 14px; width: 100%; cursor: pointer;">
+          </div>
+        </div>
+
+        <!-- DYNAMIC PACKETS AREA -->
+        <div class="menu-box" style="margin-bottom: 20px; text-align:center; background: rgba(255, 255, 255, 0.1);">
+          <h4 style="border-bottom:none; margin-bottom:5px;">🎯 Student Question Packets (Automatic)</h4>
+          <p style="font-size:13px; color:white; opacity:0.8; margin-bottom:15px;">Type student names above to instantly generate random question packets.</p>
+          <div id="dynamic-categories" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
+        </div>
+      </div>
+
+      <!-- RULES SECTION -->
+      <div id="rules-section">
+        <h2 style="color:var(--kahoot-purple); font-size:28px; text-shadow:none; text-align:center;">📜 Game Rules: English Explorer</h2>
+        <div style="text-align: center; margin-bottom: 15px;">
+          <button class="btn-audio" onclick="playRulesVoiceOver()">🔊 Play / Replay Rules Voice</button>
+        </div>
+        <hr style="border:0; border-top:1px solid #ddd; margin:15px 0;">
+        <ol style="line-height: 1.8; font-size: 15px; font-weight: 500;">
+          <li><b>Lobby & Preparation Phase:</b> The teacher inputs the roster of participating students into the student list box. The system automatically divides questions into randomized Question Packets.</li>
+          <li><b>Spinner & Turn Mechanism:</b> Click the SPIN button to randomly select a student and assign their specific Question Packet number.</li>
+          <li><b>Gameplay & Answering Rules:</b> The active student answers questions while the system automatically reads questions aloud via Voice Over.</li>
+          <li><b>Scoring System:</b> Each correct answer awards +10 points. Incorrect answers award 0 points with no deductions.</li>
+          <li><b>Classroom Etiquette:</b> Audience members are strictly prohibited from shouting out answers or spoiling the game for the active player.</li>
+          <li><b>Hall of Fame:</b> Final scores are automatically recorded and ranked in the leaderboard.</li>
+        </ol>
+        <div style="text-align: center; margin-top: 25px;">
+          <button class="btn-grammar" style="background:var(--kahoot-purple); color:white; width:auto; padding:12px 30px;" onclick="hideRules()">Back to Lobby</button>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD SECTION -->
+      <div id="leaderboard-section">
+        <h2 style="color:var(--kahoot-purple); font-size:32px; text-shadow:none; text-align:center;">🏆 Hall of Fame 🏆</h2>
+        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+          <table class="table-ranking" id="ranking-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player Name</th>
+                <th>Category</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody id="ranking-body"></tbody>
+          </table>
+        </div>
+        <br>
+        <div style="text-align: center;">
+          <button class="btn-grammar" style="background:var(--kahoot-purple); color:white; width:auto; padding:12px 30px;" onclick="hideLeaderboard()">Back to Lobby</button>
+          <button class="btn-grammar" style="background:var(--kahoot-red); color:white; width:auto; padding:12px 30px;" onclick="clearLeaderboard()">Reset Data</button>
+        </div>
+      </div>
+
+      <!-- QUIZ PLAY AREA -->
+      <div id="quiz-play" style="display: none;">
+        <p id="progress"></p>
+        <button class="btn-audio" onclick="playVoiceOver()">🔊 Replay Voice</button>
+        <div id="question"></div>
+        <div id="options"></div>
+      </div>
+
+    </div>
+
+    <!-- SPINNER SIDEBAR -->
+    <div id="sidebar">
+      <h3 style="margin-top:0; font-weight:800; color:var(--kahoot-purple); font-size: 24px;">Who's Next?</h3>
+      <p style="font-size:14px; font-weight:500; margin-top:0; color:#555;">Student & Packet Selector</p>
+      <div id="picked-name">Ready!</div>
+      <button class="btn-answer color-2" style="min-height: 60px; font-size: 22px; width:100%; box-shadow: 0 4px 0 rgba(0,0,0,0.2);" onclick="spinName()">SPIN!</button>
+    </div>
+  </div>
+  
+  <!-- SECRET ADMIN FOOTER -->
+  <div class="footer" onclick="activateAdmin()" style="cursor: pointer; user-select: none;">Created by : Saiful Hadi</div>
+
+  <script>
+let questionBank = {
+  smp: [
+    { q: "Mr. Budi ... English in our school.", options: ["teach", "teaches", "teaching", "taught"], answer: "teaches" },
+    { q: "The students ... the classroom every morning.", options: ["cleans", "clean", "cleaning", "cleaned"], answer: "clean" },
+    { q: "My little sister ... like to eat vegetables.", options: ["don't", "doesn't", "isn't", "aren't"], answer: "doesn't" },
+    { q: "... they play basketball on weekends?", options: ["Do", "Does", "Are", "Is"], answer: "Do" },
+    { q: "I ... always happy to see my friends at school.", options: ["is", "are", "am", "be"], answer: "am" },
+    { q: "We usually ... to the library during the break time.", options: ["goes", "going", "went", "go"], answer: "go" },
+    { q: "What time ... the English lesson start?", options: ["do", "is", "does", "are"], answer: "does" },
+    { q: "The sun ... in the east and sets in the west.", options: ["rise", "rises", "rising", "rose"], answer: "rises" },
+    { q: "The baby always ... loudly when he is hungry.", options: ["cries", "cry", "crying", "cried"], answer: "cries" },
+    { q: "Andi and his brother ... their bicycles to the park every Sunday.", options: ["rides", "ride", "riding", "rode"], answer: "ride" },
+    
+    { q: "Look! The cat ... over the wall.", options: ["is jumping", "are jumping", "jumps", "jumped"], answer: "is jumping" },
+    { q: "They ... a movie at the cinema at the moment.", options: ["is watching", "are watching", "watch", "watches"], answer: "are watching" },
+    { q: "Please be quiet! I ... a letter to my pen pal right now.", options: ["am writing", "is writing", "writes", "write"], answer: "am writing" },
+    { q: "We ... football outside because it is raining heavily.", options: ["aren't playing", "isn't playing", "don't play", "doesn't play"], answer: "aren't playing" },
+    { q: "Sinta ... her homework; she is sleeping on the sofa.", options: ["aren't doing", "isn't doing", "doesn't do", "don't do"], answer: "isn't doing" },
+    { q: "... you listening to the teacher's explanation?", options: ["Do", "Does", "Are", "Is"], answer: "Are" },
+    { q: "What ... mother cooking in the kitchen?", options: ["do", "does", "are", "is"], answer: "is" },
+    { q: "Listen! The birds ... beautifully in the garden.", options: ["is singing", "are singing", "sings", "sang"], answer: "are singing" },
+    { q: "He is ... in the swimming pool right now.", options: ["swimming", "swiming", "swims", "swam"], answer: "swimming" },
+    { q: "My friend and I ... for the English test at the moment.", options: ["am studying", "is studying", "are studying", "studies"], answer: "are studying" },
+
+    { q: "What is the text about?<div class='passage'>I have a cute rabbit named Snowball. He has long ears and a short tail. His fur is white and soft. He loves to eat carrots and fresh leaves. Every afternoon, I play with him in the backyard.</div>", options: ["The writer's family", "A cute rabbit named Snowball", "Fresh leaves and carrots", "Playing in the backyard"], answer: "A cute rabbit named Snowball" },
+    { q: "What is Snowball's favorite food?<div class='passage'>I have a cute rabbit named Snowball. He has long ears and a short tail. His fur is white and soft. He loves to eat carrots and fresh leaves. Every afternoon, I play with him in the backyard.</div>", options: ["Fish and meat", "Grass and fruits", "Carrots and fresh leaves", "Bread and milk"], answer: "Carrots and fresh leaves" },
+    { q: "When does the writer usually play with Snowball?<div class='passage'>I have a cute rabbit named Snowball. He has long ears and a short tail. His fur is white and soft. He loves to eat carrots and fresh leaves. Every afternoon, I play with him in the backyard.</div>", options: ["Every morning", "Every afternoon", "Every evening", "Every weekend"], answer: "Every afternoon" },
+    { q: "What event is being announced?<div class='passage'><b>Announcement</b><br>Attention to all Grade 7 and 8 students of SMP Al-Azhar Kelapa Gading Surabaya! To celebrate National Education Day, we will hold an English Speech Competition next Friday. Please register your name to Mr. Saiful Hadi in the teacher's room by Wednesday.</div>", options: ["A singing contest", "An English Speech Competition", "A sports event", "A flag ceremony"], answer: "An English Speech Competition" },
+    { q: "Who should the students contact to register for the competition?<div class='passage'><b>Announcement</b><br>Attention to all Grade 7 and 8 students of SMP Al-Azhar Kelapa Gading Surabaya! To celebrate National Education Day, we will hold an English Speech Competition next Friday. Please register your name to Mr. Saiful Hadi in the teacher's room by Wednesday.</div>", options: ["The principal", "The homeroom teacher", "Mr. Saiful Hadi", "The student council"], answer: "Mr. Saiful Hadi" },
+    { q: "When is the deadline for the registration?<div class='passage'><b>Announcement</b><br>Attention to all Grade 7 and 8 students of SMP Al-Azhar Kelapa Gading Surabaya! To celebrate National Education Day, we will hold an English Speech Competition next Friday. Please register your name to Mr. Saiful Hadi in the teacher's room by Wednesday.</div>", options: ["Monday", "Tuesday", "Wednesday", "Friday"], answer: "Wednesday" },
+    { q: "Where did the writer's family go last Sunday?<div class='passage'>Last Sunday, my family and I went to the beach. We left home at 7 AM by car. When we arrived, the weather was very sunny. My brother and I built a sandcastle, while our parents took some photos. We went home at 4 PM feeling very happy.</div>", options: ["To the mountain", "To the beach", "To the museum", "To the zoo"], answer: "To the beach" },
+    { q: "How did they travel to their destination?<div class='passage'>Last Sunday, my family and I went to the beach. We left home at 7 AM by car. When we arrived, the weather was very sunny. My brother and I built a sandcastle, while our parents took some photos. We went home at 4 PM feeling very happy.</div>", options: ["By bus", "By train", "By motorcycle", "By car"], answer: "By car" },
+    { q: "What did the writer's parents do at the beach?<div class='passage'>Last Sunday, my family and I went to the beach. We left home at 7 AM by car. When we arrived, the weather was very sunny. My brother and I built a sandcastle, while our parents took some photos. We went home at 4 PM feeling very happy.</div>", options: ["Built a sandcastle", "Took some photos", "Swam in the sea", "Ate lunch"], answer: "Took some photos" },
+    { q: "What was the weather like when they arrived?<div class='passage'>Last Sunday, my family and I went to the beach. We left home at 7 AM by car. When we arrived, the weather was very sunny. My brother and I built a sandcastle, while our parents took some photos. We went home at 4 PM feeling very happy.</div>", options: ["Rainy", "Cloudy", "Windy", "Sunny"], answer: "Sunny" },
+    
+    { q: "I always ... my teeth before going to bed.", options: ["brush", "brushes", "brushed", "brushing"], answer: "brush" },
+    { q: "You ... wear a uniform when you go to school.", options: ["can", "may", "must", "might"], answer: "must" },
+    { q: "Sstt! Please be quiet. The baby ... in the bedroom.", options: ["sleep", "sleeps", "is sleeping", "slept"], answer: "is sleeping" },
+    { q: "\"Don't step on the grass.\" What does this notice mean?", options: ["We must walk on the grass", "We must not walk on the grass", "We can play on the grass", "We should cut the grass"], answer: "We must not walk on the grass" },
+    { q: "... do you live? | I live in Surabaya.", options: ["When", "Who", "Where", "Why"], answer: "Where" },
+    { q: "Look! There are many ... playing cheerfully in the park.", options: ["child", "childs", "children", "childrens"], answer: "children" },
+    { q: "Mr. Anton is my father's brother. He is my ...", options: ["uncle", "aunt", "nephew", "cousin"], answer: "uncle" },
+    { q: "We ... a very funny movie on TV last night.", options: ["watch", "watches", "watched", "watching"], answer: "watched" },
+    { q: "An elephant is a very big animal, but a mouse is ...", options: ["tall", "small", "short", "long"], answer: "small" },
+    { q: "You meet your English teacher at 07:00 AM. What do you say?", options: ["Good night", "Good afternoon", "Good evening", "Good morning"], answer: "Good morning" }
+  ]
+};
+
+    let currentQ = 0;
+    let score = 0;
+    let currentCategory = [];
+    let timerInterval;
+    let timeRemaining = 0;
+    
+    let studentNames = [];
+    let availableStudents = [];
+    let availablePackets = [];
+    let packetsData = {}; 
+    let activeCategoryName = "";
+
+    let isSpinning = false;
+    let leaderboard = JSON.parse(localStorage.getItem('englishExplorerScores')) || [];
+
+    function getMaleVoice(utterance) {
+        let voices = window.speechSynthesis.getVoices();
+        let maleVoice = voices.find(v => v.lang.startsWith('en') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('george') || v.name.toLowerCase().includes('james') || v.name.toLowerCase().includes('brian') || v.name.toLowerCase().includes('ryan')));
+        if (!maleVoice) {
+            maleVoice = voices.find(v => v.lang.startsWith('en'));
+        }
+        if (maleVoice) {
+            utterance.voice = maleVoice;
+        }
+    }
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = function() {
+            window.speechSynthesis.getVoices();
+        };
+    }
+
+    let adminClickCount = 0;
+    function activateAdmin() {
+        adminClickCount++;
+        setTimeout(() => { adminClickCount = 0; }, 3000);
+        if (adminClickCount === 5) {
+            let pin = prompt("Developer Mode: Enter Admin PIN");
+            if (pin === "12345") {
+                document.getElementById('admin-upload-box').style.display = 'inline-block';
+                alert("Admin Access Granted! Upload question menu is now visible.");
+            } else {
+                alert("Incorrect PIN!");
+            }
+            adminClickCount = 0; 
+        }
+    }
+
+    function playVoiceOver() {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        let currentQuestionObj = currentCategory[currentQ];
+        if (!currentQuestionObj) return;
+
+        let tempDiv = document.createElement("div");
+        tempDiv.innerHTML = currentQuestionObj.q;
+        let cleanText = tempDiv.textContent || tempDiv.innerText || "";
+
+        let speech = new SpeechSynthesisUtterance(cleanText);
+        speech.lang = 'en-US';
+        speech.rate = 0.9;
+        speech.pitch = 0.9;
+
+        getMaleVoice(speech);
+        window.speechSynthesis.speak(speech);
+    }
+
+    function playRulesVoiceOver() {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        let rulesText = "Game Rules: English Explorer. " +
+            "First, Lobby and Preparation Phase. The teacher inputs the roster of participating students into the student list box. The system automatically divides questions into randomized Question Packets. " +
+            "Second, Spinner and Turn Mechanism. Click the SPIN button to randomly select a student and assign their specific Question Packet number. " +
+            "Third, Gameplay and Answering Rules. The active student answers questions while the system automatically reads questions aloud via Voice Over. " +
+            "Fourth, Scoring System. Each correct answer awards plus ten points. Incorrect answers award zero points with no deductions. " +
+            "Fifth, Classroom Etiquette. Audience members are strictly prohibited from shouting out answers or spoiling the game for the active player. " +
+            "Sixth, Hall of Fame. Final scores are automatically recorded and ranked in the leaderboard.";
+
+        let speech = new SpeechSynthesisUtterance(rulesText);
+        speech.lang = 'en-US';
+        speech.rate = 0.9;
+        speech.pitch = 0.9;
+
+        getMaleVoice(speech);
+        window.speechSynthesis.speak(speech);
+    }
+
+    function unggahSoal(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const soalBaru = JSON.parse(e.target.result);
+          questionBank = soalBaru;
+          if (studentNames.length > 0) { generatePackets(); }
+          alert("✅ Question bank successfully updated from file!");
+        } catch (error) {
+          alert("❌ Failed to load questions. Make sure the JSON format is correct.");
+          console.error("Detail error:", error);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function showRules() {
+      document.getElementById('main-menu').style.display = 'none';
+      document.getElementById('rules-section').style.display = 'block';
+      playRulesVoiceOver();
+    }
+    function hideRules() {
+      window.speechSynthesis.cancel();
+      document.getElementById('rules-section').style.display = 'none';
+      document.getElementById('main-menu').style.display = 'block';
+    }
+    function showLeaderboard() {
+      document.getElementById('main-menu').style.display = 'none';
+      document.getElementById('leaderboard-section').style.display = 'block';
+      renderLeaderboard();
+    }
+    function hideLeaderboard() {
+      document.getElementById('leaderboard-section').style.display = 'none';
+      document.getElementById('main-menu').style.display = 'block';
+    }
+
+    function updateStudentList() {
+        let rawNames = document.getElementById('studentList').value;
+        studentNames = rawNames.split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
+        
+        if (studentNames.length > 0) {
+            document.getElementById('sidebar').style.display = 'flex';
+            generatePackets();
+        } else {
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('dynamic-categories').innerHTML = "";
+            availableStudents = [];
+            availablePackets = [];
+        }
+    }
+
+    function generatePackets() {
+        let N = studentNames.length;
+        if(N === 0) return;
+
+        availableStudents = [...studentNames];
+        availablePackets = Array.from({length: N}, (_, i) => i + 1);
+        packetsData = {};
+
+        let keys = Object.keys(questionBank);
+        if(keys.length === 0) return;
+        
+        let masterBank = [];
+        for(let k of keys) {
+            masterBank = masterBank.concat(questionBank[k]);
+        }
+
+        let qPerPacket = parseInt(document.getElementById('qPerPacket').value) || 10;
+
+        for (let i = 1; i <= N; i++) {
+            let shuffled = [...masterBank].sort(() => Math.random() - 0.5);
+            packetsData[i] = shuffled.slice(0, qPerPacket);
+        }
+
+        let container = document.getElementById('dynamic-categories');
+        container.innerHTML = "";
+        for (let i = 1; i <= N; i++) {
+            let btn = document.createElement('button');
+            btn.className = "btn-grammar";
+            btn.style.width = "auto";
+            btn.style.padding = "10px 20px";
+            btn.style.fontSize = "16px";
+            btn.innerText = `Packet ${i}`;
+            btn.id = `btn-paket-${i}`;
+            btn.onclick = () => startDynamicPacket(i);
+            container.appendChild(btn);
+        }
+    }
+
+    function spinName() {
+        if(availableStudents.length === 0) {
+            alert("All students have taken their turns!");
+            return;
+        }
+        if(isSpinning) return;
+        isSpinning = true;
+        
+        let duration = 2500;
+        let speed = 60;
+        let display = document.getElementById('picked-name');
+        let startTime = Date.now();
+        
+        display.style.color = "#333";
+        display.style.transform = "scale(1)";
+
+        let spinIntervalId = setInterval(() => {
+            let randomName = availableStudents[Math.floor(Math.random() * availableStudents.length)];
+            display.innerText = randomName;
+
+            if (Date.now() - startTime > duration) {
+                clearInterval(spinIntervalId);
+                
+                let studentIndex = Math.floor(Math.random() * availableStudents.length);
+                let finalName = availableStudents[studentIndex];
+                
+                let packetIndex = Math.floor(Math.random() * availablePackets.length);
+                let finalPacket = availablePackets[packetIndex];
+                
+                availableStudents.splice(studentIndex, 1);
+                availablePackets.splice(packetIndex, 1);
+                
+                display.innerHTML = `🎉 <b>${finalName}</b> 🎉<br><span style='font-size:16px; color:#666; margin-top:8px;'>Assigned <b>Packet ${finalPacket}</b></span>`;
+                display.style.color = "var(--kahoot-red)";
+                display.style.transform = "scale(1.1)";
+                
+                setTimeout(() => { display.style.transform = "scale(1)"; }, 300);
+
+                let btn = document.getElementById(`btn-paket-${finalPacket}`);
+                if(btn) {
+                    btn.style.backgroundColor = "var(--kahoot-yellow)";
+                    btn.style.color = "white";
+                }
+
+                isSpinning = false;
+            }
+        }, speed);
+    }
+
+    function startDynamicPacket(packetNum) {
+        currentCategory = packetsData[packetNum];
+        if(!currentCategory || currentCategory.length === 0) {
+            alert("This packet is empty or questions are insufficient!");
+            return;
+        }
+        activeCategoryName = `Packet ${packetNum}`;
+        
+        let btn = document.getElementById(`btn-paket-${packetNum}`);
+        if(btn) {
+            btn.style.backgroundColor = "#ccc";
+            btn.style.color = "#fff";
+            btn.style.boxShadow = "none";
+            btn.style.transform = "none";
+        }
+
+        let inputMenit = parseInt(document.getElementById('timeLimit').value);
+        if (isNaN(inputMenit) || inputMenit < 1) { inputMenit = 10; }
+        timeRemaining = inputMenit * 60;
+        
+        startGame();
+    }
+
+    function startGame() {
+      currentQ = 0; 
+      score = 0;
+      document.getElementById('score').innerText = score;
+      
+      document.getElementById('app-body').className = 'mode-game';
+      document.getElementById('header-bar').style.display = 'flex';
+      
+      document.getElementById('main-menu').style.display = 'none';
+      document.getElementById('quiz-play').style.display = 'block';
+      
+      let qBox = document.getElementById('question');
+      qBox.style.display = 'flex';
+      qBox.style.background = 'white';
+      qBox.style.color = '#333';
+      qBox.style.boxShadow = '0 4px 0 rgba(0,0,0,0.1)';
+      qBox.style.fontSize = '24px';
+      
+      updateTimerDisplay();
+      
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+          timeRemaining--;
+          updateTimerDisplay();
+          if (timeRemaining <= 0) {
+              clearInterval(timerInterval);
+              waktuHabis();
+          }
+      }, 1000);
+
+      showQuestion();
+    }
+
+    function updateTimerDisplay() {
+        let m = Math.floor(timeRemaining / 60);
+        let s = timeRemaining % 60;
+        let formattedM = m < 10 ? "0" + m : m;
+        let formattedS = s < 10 ? "0" + s : s;
+        document.getElementById('timer-display').innerText = `${formattedM}:${formattedS}`;
+    }
+
+    function waktuHabis() {
+        window.speechSynthesis.cancel();
+        saveScore();
+        document.getElementById('progress').innerText = "TIME'S UP!";
+        document.getElementById('question').innerHTML = `Game Over!<br>Final Score: ${score}`;
+        document.getElementById('options').innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center;">
+            <button class="btn-grammar" style="background:var(--kahoot-purple); color:white; width:auto; padding:15px 30px;" onclick="kembaliKeMenu()">Back to Lobby</button>
+          </div>
+        `;
+    }
+
+    function showQuestion() {
+      if(currentQ >= currentCategory.length) {
+        window.speechSynthesis.cancel();
+        clearInterval(timerInterval);
+        saveScore();
+        document.getElementById('progress').innerText = "QUIZ COMPLETED!";
+        document.getElementById('question').innerHTML = `Great Job! 🎉<br>Your Score: ${score}`;
+        document.getElementById('options').innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center;">
+            <button class="btn-grammar" style="background:var(--kahoot-purple); color:white; width:auto; padding:15px 30px;" onclick="kembaliKeMenu()">Back to Lobby</button>
+          </div>
+        `;
+        return;
+      }
+      
+      document.getElementById('progress').innerText = `Question ${currentQ + 1} of ${currentCategory.length}`;
+      let q = currentCategory[currentQ];
+      
+      document.getElementById('question').innerHTML = q.q;
+      document.getElementById('options').innerHTML = "";
+      
+      q.options.forEach((opt, index) => {
+        let safeOpt = opt.replace(/'/g, "\\'");
+        let colorClass = 'color-' + (index % 4); 
+        document.getElementById('options').innerHTML += `<button class="btn-answer ${colorClass}" onclick="checkAnswer('${safeOpt}')">${opt}</button>`;
+      });
+
+      playVoiceOver();
+    }
+
+    function checkAnswer(ans) {
+      window.speechSynthesis.cancel();
+      if(ans === currentCategory[currentQ].answer) {
+        score += 10;
+        document.getElementById('score').innerText = score;
+      }
+      currentQ++;
+      showQuestion();
+    }
+
+    function saveScore() {
+        let rawHtml = document.getElementById('picked-name').innerHTML;
+        let playerName = "Guest";
+        
+        let match = rawHtml.match(/<b>(.*?)<\/b>/);
+        if(match && match[1]) { playerName = match[1]; }
+        if (playerName === "Ready!" || playerName === "") playerName = "Guest";
+        
+        leaderboard.push({ name: playerName, score: score, category: activeCategoryName });
+        leaderboard.sort((a, b) => b.score - a.score);
+        localStorage.setItem('englishExplorerScores', JSON.stringify(leaderboard));
+    }
+
+    function renderLeaderboard() {
+      let tbody = document.getElementById('ranking-body');
+      tbody.innerHTML = "";
+      if(leaderboard.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No scores yet. Play a game!</td></tr>";
+        return;
+      }
+      leaderboard.forEach((entry, index) => {
+        let rankClass = "";
+        if(index === 0) rankClass = "rank-1";
+        else if(index === 1) rankClass = "rank-2";
+        else if(index === 2) rankClass = "rank-3";
+        
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="${rankClass}">#${index + 1}</td>
+          <td class="${rankClass}">${entry.name}</td>
+          <td>${entry.category}</td>
+          <td class="${rankClass}">${entry.score}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function clearLeaderboard() {
+      if(confirm("Are you sure you want to delete all ranking data?")) {
+        leaderboard = [];
+        localStorage.removeItem('englishExplorerScores');
+        renderLeaderboard();
+      }
+    }
+
+    function kembaliKeMenu() {
+      window.speechSynthesis.cancel();
+      clearInterval(timerInterval);
+      document.getElementById('app-body').className = 'mode-lobby';
+      document.getElementById('header-bar').style.display = 'none';
+      document.getElementById('quiz-play').style.display = 'none';
+      document.getElementById('options').innerHTML = ''; 
+      document.getElementById('main-menu').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
